@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<!-- saved from url=(0035)https://byjoelb.github.io/finan-as/ -->
+<html lang="pt-BR"><head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finança Compartilhada — Joel &amp; Andressa</title>
+<link href="./Finança Compartilhada — Joel &amp; Andressa_files/css2" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f11; --surface: #16181c; --surface2: #1e2128; --border: #2a2d35;
+    --accent-a: #7fffb2; --accent-b: #ff7fb0; --accent-warn: #ffcd5c;
+    --text: #e8eaf0; --text-muted: #6b7280; --text-dim: #9ca3af;
+    --green: #4ade80; --red: #f87171; --yellow: #fbbf24;
+    --radius: 12px; --font-head: 'Syne', sans-serif; --font-mono: 'DM Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-mono); font-size:14px; min-height:100vh; }
+
+  /* LOADING SCREEN */
+  #loadingScreen { position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9999; gap:16px; }
+  .spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--accent-a); border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-text { color:var(--text-muted); font-size:13px; }
+
+  /* SYNC INDICATOR */
+  #syncDot { width:8px; height:8px; border-radius:50%; background:var(--green); display:inline-block; margin-right:6px; transition:background 0.3s; }
+  #syncDot.syncing { background:var(--yellow); animation:pulse 1s infinite; }
+  #syncDot.error { background:var(--red); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .header { background:var(--surface); border-bottom:1px solid var(--border); padding:0 24px; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:100; }
+  .logo { font-family:var(--font-head); font-weight:800; font-size:18px; letter-spacing:-0.5px; }
+  .logo span { color:var(--accent-a); }
+  .header-right { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .sync-status { display:flex; align-items:center; font-size:11px; color:var(--text-muted); }
+
+  .profile-toggle { display:flex; gap:4px; background:var(--bg); padding:4px; border-radius:8px; border:1px solid var(--border); }
+  .profile-btn { padding:6px 16px; border:none; border-radius:6px; cursor:pointer; font-family:var(--font-mono); font-size:13px; font-weight:500; background:transparent; color:var(--text-muted); transition:all 0.2s; }
+  .profile-btn.active-a { background:var(--accent-a); color:#0e0f11; }
+  .profile-btn.active-b { background:var(--accent-b); color:#0e0f11; }
+
+  .nav-tabs { background:var(--surface); border-bottom:1px solid var(--border); display:flex; padding:0 24px; overflow-x:auto; }
+  .tab-btn { padding:14px 18px; border:none; background:transparent; color:var(--text-muted); cursor:pointer; font-family:var(--font-mono); font-size:13px; border-bottom:2px solid transparent; transition:all 0.2s; display:flex; align-items:center; gap:8px; white-space:nowrap; }
+  .tab-btn:hover { color:var(--text); }
+  .tab-btn.active { color:var(--text); border-bottom-color:var(--accent-a); }
+
+  .main { padding:24px; max-width:1200px; margin:0 auto; }
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
+
+  .cards-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:16px; margin-bottom:28px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+  .card-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  .card-value { font-family:var(--font-head); font-size:24px; font-weight:700; }
+  .card-value.green { color:var(--accent-a); } .card-value.red { color:var(--accent-b); }
+  .card-value.yellow { color:var(--accent-warn); } .card-value.white { color:var(--text); }
+  .card-value.purple { color:#c4b5fd; }
+  .card-sub { font-size:11px; color:var(--text-muted); margin-top:4px; }
+
+  .section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+  .section-title { font-family:var(--font-head); font-size:16px; font-weight:700; }
+
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
+  .filter-select, .filter-input { background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:8px 12px; font-family:var(--font-mono); font-size:13px; cursor:pointer; outline:none; }
+  .filter-select:focus, .filter-input:focus { border-color:var(--accent-a); }
+
+  .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; min-width:680px; }
+  thead { background:var(--surface2); border-bottom:1px solid var(--border); }
+  th { padding:12px 14px; text-align:left; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; font-weight:500; }
+  td { padding:13px 14px; border-bottom:1px solid var(--border); font-size:13px; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,0.02); }
+
+  .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:500; }
+  .badge-pending { background:rgba(251,191,36,0.15); color:var(--yellow); }
+  .badge-paid { background:rgba(74,222,128,0.15); color:var(--green); }
+  .badge-aguard { background:rgba(251,191,36,0.1); color:#fb923c; }
+  .badge-fixo { background:rgba(127,255,178,0.1); color:var(--accent-a); }
+  .badge-variavel { background:rgba(255,127,176,0.1); color:var(--accent-b); }
+  .badge-parcelado { background:rgba(255,205,92,0.1); color:var(--accent-warn); }
+  .badge-gustavo { background:rgba(196,181,253,0.15); color:#c4b5fd; }
+  .badge-cachorra { background:rgba(251,191,36,0.15); color:#fbbf24; }
+
+  .btn { padding:8px 18px; border-radius:8px; border:none; cursor:pointer; font-family:var(--font-mono); font-size:13px; font-weight:500; transition:all 0.15s; }
+  .btn-primary { background:var(--accent-a); color:#0e0f11; }
+  .btn-primary:hover { opacity:0.9; }
+  .btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
+  .btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+  .btn-secondary:hover { border-color:var(--accent-a); }
+  .btn-sm { padding:5px 11px; font-size:12px; border-radius:6px; }
+  .btn-danger { background:rgba(248,113,113,0.15); color:var(--red); border:1px solid rgba(248,113,113,0.3); }
+  .btn-success { background:rgba(74,222,128,0.15); color:var(--green); border:1px solid rgba(74,222,128,0.3); }
+  .btn-warn { background:rgba(251,191,36,0.15); color:var(--yellow); border:1px solid rgba(251,191,36,0.3); }
+  .btn-confirm { background:rgba(147,197,253,0.15); color:#93c5fd; border:1px solid rgba(147,197,253,0.3); }
+  .action-btns { display:flex; gap:5px; flex-wrap:wrap; }
+
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); display:none; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:28px; width:100%; max-width:560px; max-height:92vh; overflow-y:auto; animation:slideUp 0.2s ease; }
+  @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-title { font-family:var(--font-head); font-size:18px; font-weight:700; margin-bottom:24px; }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .form-group { display:flex; flex-direction:column; gap:6px; }
+  .form-group.full { grid-column:1/-1; }
+  label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; }
+  input, select, textarea { background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:10px 12px; font-family:var(--font-mono); font-size:13px; outline:none; transition:border-color 0.15s; width:100%; }
+  input:focus, select:focus, textarea:focus { border-color:var(--accent-a); }
+  textarea { resize:vertical; min-height:72px; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:24px; }
+
+  .empty { text-align:center; padding:48px 24px; color:var(--text-muted); }
+  .empty-icon { font-size:40px; margin-bottom:12px; }
+  .notice { background:rgba(147,197,253,0.08); border:1px solid rgba(147,197,253,0.2); border-radius:8px; padding:12px 16px; font-size:13px; color:#93c5fd; margin-bottom:16px; }
+  .notice-warn { background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.2); border-radius:8px; padding:12px 16px; font-size:13px; color:var(--yellow); margin-bottom:16px; }
+
+  .parcela-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:16px; }
+  .parcela-top { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+  .parcela-name { font-family:var(--font-head); font-size:16px; font-weight:700; margin-bottom:6px; }
+  .parcela-meta { color:var(--text-muted); font-size:12px; margin-top:4px; }
+  .progress-bar { background:var(--bg); border-radius:4px; height:7px; margin-top:14px; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,var(--accent-a),#38bdf8); border-radius:4px; transition:width 0.5s; }
+  .parcela-values { text-align:right; flex-shrink:0; }
+  .parcela-total { font-family:var(--font-head); font-size:22px; font-weight:700; color:var(--accent-warn); }
+  .parcela-remaining { font-size:12px; color:var(--text-muted); margin-top:3px; }
+
+  .pgto-list { margin-top:14px; border-top:1px solid var(--border); padding-top:4px; }
+  .pgto-item { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px dashed var(--border); font-size:12px; gap:8px; flex-wrap:wrap; }
+  .pgto-item:last-child { border-bottom:none; }
+  .pgto-num { color:var(--text-muted); min-width:70px; }
+  .pgto-date { color:var(--text-dim); }
+  .pgto-status-confirmado { color:var(--green); }
+  .pgto-status-pago { color:#fb923c; }
+  .pgto-status-pendente { color:var(--yellow); }
+
+  .log-entry { display:flex; gap:14px; padding:12px 0; border-bottom:1px solid var(--border); align-items:flex-start; }
+  .log-entry:last-child { border-bottom:none; }
+  .log-dot { width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+  .log-time { color:var(--text-muted); font-size:11px; white-space:nowrap; }
+  .log-msg { font-size:13px; flex:1; }
+
+  .month-nav { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  .month-label { font-family:var(--font-head); font-size:18px; font-weight:700; min-width:190px; text-align:center; }
+  .month-btn { background:var(--surface); border:1px solid var(--border); color:var(--text); width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; transition:border-color 0.2s; }
+  .month-btn:hover { border-color:var(--accent-a); }
+
+  .info-chip { display:inline-flex; align-items:center; gap:6px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:12px; color:var(--text-muted); }
+  .tag-a { background:rgba(127,255,178,0.15); color:var(--accent-a); padding:2px 8px; border-radius:4px; font-size:11px; }
+  .tag-b { background:rgba(255,127,176,0.15); color:var(--accent-b); padding:2px 8px; border-radius:4px; font-size:11px; }
+
+  @media (max-width:640px) {
+    .form-grid { grid-template-columns:1fr; }
+    .main { padding:14px; }
+    .cards-row { grid-template-columns:1fr 1fr; }
+    .header-right { gap:8px; }
+    .sync-status { display:none; }
+  }
+</style>
+<meta id="bbafmabaelnnkondpfpjmdklbmfnbmol"><meta id="dcngeagmmhegagicpcmpinaoklddcgon"></head>
+<body>
+
+<!-- LOADING -->
+<div id="loadingScreen" style="display: none;">
+  <div class="spinner"></div>
+  <div class="loading-text">Conectando ao Firebase...</div>
+</div>
+
+<div id="appShell" style="display: block;">
+
+<div class="header">
+  <div class="logo">💸 finança<span>duo</span></div>
+  <div class="header-right">
+    <div class="sync-status"><span id="syncDot"></span><span id="syncLabel">Conectado</span></div>
+    <span class="info-chip">👤 <span id="profileName">Joel</span></span>
+    <div class="profile-toggle">
+      <button class="profile-btn active-a" onclick="setProfile(&#39;A&#39;)">Joel</button>
+      <button class="profile-btn" onclick="setProfile(&#39;B&#39;)">Andressa</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <button class="tab-btn active" onclick="showTab(&#39;dashboard&#39;,this)">📊 Dashboard</button>
+  <button class="tab-btn" onclick="showTab(&#39;despesas&#39;,this)">📋 Despesas</button>
+  <button class="tab-btn" onclick="showTab(&#39;parcelas&#39;,this)">🏠 Parcelas Longas</button>
+  <button class="tab-btn" onclick="showTab(&#39;fixas&#39;,this)">🔁 Fixas</button>
+  <button class="tab-btn" onclick="showTab(&#39;historico&#39;,this)">📜 Histórico</button>
+</div>
+
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard" class="tab-content active">
+    <div class="month-nav">
+      <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+      <div class="month-label" id="monthLabel">Maio 2026</div>
+      <button class="month-btn" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="cards-row" id="dashCards">
+    <div class="card"><div class="card-label">Total do Mês</div><div class="card-value white">R$ 726,31</div><div class="card-sub">4 lançamento(s)</div></div>
+    <div class="card"><div class="card-label">Andressa deve a Joel</div><div class="card-value red">R$ 301,94</div><div class="card-sub">Aguardando pagamento</div></div>
+    <div class="card"><div class="card-label">Pago — Joel confirmar</div><div class="card-value yellow">R$ 0,00</div><div class="card-sub">Andressa pagou, Joel confirma</div></div>
+    <div class="card"><div class="card-label">✓ Confirmados</div><div class="card-value green">R$ 0,00</div><div class="card-sub">Quitados este mês</div></div>
+  <div class="card"><div class="card-label">💜 Gustavo</div><div class="card-value purple">R$ 160,51</div><div class="card-sub">Custos com o Gustavo</div></div></div>
+    <div class="section-head"><div class="section-title">Lançamentos do Mês</div></div>
+    <div id="dashTable"><div class="table-wrap"><table>
+    <thead><tr>
+      <th>Descrição</th><th>Categoria</th><th>Pago por</th>
+      <th>Total</th><th>Devedor deve</th><th>Vencimento</th><th>Status</th>
+      
+    </tr></thead>
+    <tbody><tr>
+        <td><div style="font-weight:500">Remédios Lana para ouvido e limpeza</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Está falando que Andressa deve 100, mas quem deve 100 é Joel</div></td>
+        <td><span class="badge badge-Lana">Lana 🐶</span></td>
+        <td><span class="tag-b">Andressa</span></td>
+        <td style="font-weight:600">R$ 200,00</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 100,00</td>
+        <td style="color:var(--red)">18/05/2026 ⚠️</td>
+        <td><span class="badge badge-pending">Pendente</span></td>
+        
+      </tr><tr>
+        <td><div style="font-weight:500">Plano de saúde Lana</div></td>
+        <td><span class="badge badge-Lana">Lana 🐶</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 288,21</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 144,10</td>
+        <td style="color:var(--red)">17/05/2026 ⚠️</td>
+        <td><span class="badge badge-pending">Pendente</span></td>
+        
+      </tr><tr>
+        <td><div style="font-weight:500">Consulta Fono</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Consulta foi 320 e o plano reembolsou 159,49</div></td>
+        <td><span class="badge badge-gustavo">Gustavo 👦</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 160,51</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 80,25</td>
+        <td style="color:var(--red)">10/05/2026 ⚠️</td>
+        <td><span class="badge badge-pending">Pendente</span></td>
+        
+      </tr><tr>
+        <td><div style="font-weight:500">Frete remédios</div></td>
+        <td><span class="badge badge-variavel">Variável</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 77,59</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 77,59</td>
+        <td style="color:var(--red)">05/05/2026 ⚠️</td>
+        <td><span class="badge badge-pending">Pendente</span></td>
+        
+      </tr></tbody>
+  </table></div></div>
+  </div>
+
+  <!-- DESPESAS -->
+  <div id="tab-despesas" class="tab-content">
+    <div class="section-head">
+      <div class="section-title">Todas as Despesas</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-secondary" onclick="exportExcel()">⬇ Exportar Excel</button>
+        <button class="btn btn-primary" id="btnNovaDespesa" onclick="openModal()" style="">+ Nova Despesa</button>
+      </div>
+    </div>
+    <div id="novaNotice" class="notice" style="display: none;">ℹ️ <strong>Andressa</strong>: você pode lançar despesas que você pagou (Joel será o devedor) e marcar despesas como pagas.</div>
+    <div class="filters">
+      <select class="filter-select" id="filterStatus" onchange="renderDespesas()">
+        <option value="">Todos os status</option>
+        <option value="pendente">Pendente</option>
+        <option value="pago">Pago (aguard. Joel)</option>
+        <option value="confirmado">Confirmado</option>
+      </select>
+      <select class="filter-select" id="filterCategoria" onchange="renderDespesas()">
+        <option value="">Todas as categorias</option>
+        <option value="fixo">Fixo</option>
+        <option value="variavel">Variável</option>
+        <option value="parcelado">Parcelado</option>
+        <option value="gustavo">Gustavo</option>
+        <option value="Lana">Lana 🐶</option>
+      </select>
+      <input class="filter-input" id="filterSearch" placeholder="🔍 Buscar..." oninput="renderDespesas()" style="min-width:160px;">
+    </div>
+    <div id="despesasTable"><div class="table-wrap"><table>
+    <thead><tr>
+      <th>Descrição</th><th>Categoria</th><th>Pago por</th>
+      <th>Total</th><th>Devedor deve</th><th>Vencimento</th><th>Status</th>
+      <th>Ações</th>
+    </tr></thead>
+    <tbody><tr>
+        <td><div style="font-weight:500">Remédios Lana para ouvido e limpeza</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Está falando que Andressa deve 100, mas quem deve 100 é Joel</div></td>
+        <td><span class="badge badge-Lana">Lana 🐶</span></td>
+        <td><span class="tag-b">Andressa</span></td>
+        <td style="font-weight:600">R$ 200,00</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 100,00</td>
+        <td style="color:var(--red)">18/05/2026 ⚠️</td>
+        <td><span class="badge badge-pending">Pendente</span></td>
+        <td><div class="action-btns"><button class="btn btn-sm btn-warn" onclick="updateStatus(&#39;oxVnO2E88HKRPXImAofb&#39;,&#39;pago&#39;)">Marcar pago</button> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;oxVnO2E88HKRPXImAofb&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;oxVnO2E88HKRPXImAofb&#39;)">✕</button></div></td>
+      </tr><tr>
+        <td><div style="font-weight:500">Plano de saúde Lana</div></td>
+        <td><span class="badge badge-Lana">Lana 🐶</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 288,21</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 144,10</td>
+        <td style="color:var(--red)">17/05/2026 ⚠️</td>
+        <td><span class="badge badge-pending">Pendente</span></td>
+        <td><div class="action-btns"><button class="btn btn-sm btn-warn" onclick="updateStatus(&#39;07igqcGYmS5fJkcBuKl6&#39;,&#39;pago&#39;)">Marcar pago</button> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;07igqcGYmS5fJkcBuKl6&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;07igqcGYmS5fJkcBuKl6&#39;)">✕</button></div></td>
+      </tr><tr>
+        <td><div style="font-weight:500">Consulta Fono</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Consulta foi 320 e o plano reembolsou 159,49</div></td>
+        <td><span class="badge badge-gustavo">Gustavo 👦</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 160,51</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 80,25</td>
+        <td style="color:var(--red)">10/05/2026 ⚠️</td>
+        <td><span class="badge badge-pending">Pendente</span></td>
+        <td><div class="action-btns"><button class="btn btn-sm btn-warn" onclick="updateStatus(&#39;BHt2H9W9Nf2I3wh8GRJh&#39;,&#39;pago&#39;)">Marcar pago</button> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;BHt2H9W9Nf2I3wh8GRJh&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;BHt2H9W9Nf2I3wh8GRJh&#39;)">✕</button></div></td>
+      </tr><tr>
+        <td><div style="font-weight:500">Frete remédios</div></td>
+        <td><span class="badge badge-variavel">Variável</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 77,59</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 77,59</td>
+        <td style="color:var(--red)">05/05/2026 ⚠️</td>
+        <td><span class="badge badge-pending">Pendente</span></td>
+        <td><div class="action-btns"><button class="btn btn-sm btn-warn" onclick="updateStatus(&#39;JNIg5LVcVTJ0cFUw07pR&#39;,&#39;pago&#39;)">Marcar pago</button> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;JNIg5LVcVTJ0cFUw07pR&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;JNIg5LVcVTJ0cFUw07pR&#39;)">✕</button></div></td>
+      </tr><tr>
+        <td><div style="font-weight:500">UNIFORME AVENTUREIROS</div></td>
+        <td><span class="badge badge-gustavo">Gustavo 👦</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 285,00</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 142,50</td>
+        <td style="">30/04/2026</td>
+        <td><span class="badge badge-paid">✓ Confirmado</span></td>
+        <td><div class="action-btns"> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;wqziqlbDtDXpH7xpp7hb&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;wqziqlbDtDXpH7xpp7hb&#39;)">✕</button></div></td>
+      </tr><tr>
+        <td><div style="font-weight:500">Aventuri</div></td>
+        <td><span class="badge badge-gustavo">Gustavo 👦</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 650,00</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 325,00</td>
+        <td style="">30/04/2026</td>
+        <td><span class="badge badge-paid">✓ Confirmado</span></td>
+        <td><div class="action-btns"> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;XpaqvGyV12nhlfS1JnI4&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;XpaqvGyV12nhlfS1JnI4&#39;)">✕</button></div></td>
+      </tr><tr>
+        <td><div style="font-weight:500">Conta Celular</div></td>
+        <td><span class="badge badge-fixo">Fixo</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 151,00</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 75,50</td>
+        <td style="">30/04/2026</td>
+        <td><span class="badge badge-paid">✓ Confirmado</span></td>
+        <td><div class="action-btns"> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;WSDrNQQuOhIGSIzdyPF2&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;WSDrNQQuOhIGSIzdyPF2&#39;)">✕</button></div></td>
+      </tr><tr>
+        <td><div style="font-weight:500">Pensão</div></td>
+        <td><span class="badge badge-gustavo">Gustavo 👦</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 2.100,00</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 2.100,00</td>
+        <td style="">30/04/2026</td>
+        <td><span class="badge badge-paid">✓ Confirmado</span></td>
+        <td><div class="action-btns"> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;MmJ8vsW6QkMLX8PYGN8a&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;MmJ8vsW6QkMLX8PYGN8a&#39;)">✕</button></div></td>
+      </tr><tr>
+        <td><div style="font-weight:500">Spotify</div></td>
+        <td><span class="badge badge-fixo">Fixo</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 40,90</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 20,45</td>
+        <td style="">30/04/2026</td>
+        <td><span class="badge badge-paid">✓ Confirmado</span></td>
+        <td><div class="action-btns"> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;qSGxyx7DGC54thfHIIw2&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;qSGxyx7DGC54thfHIIw2&#39;)">✕</button></div></td>
+      </tr><tr>
+        <td><div style="font-weight:500">Netflix</div></td>
+        <td><span class="badge badge-fixo">Fixo</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 44,00</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 22,00</td>
+        <td style="">30/04/2026</td>
+        <td><span class="badge badge-paid">✓ Confirmado</span></td>
+        <td><div class="action-btns"> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;lyJx5vcmTLsR3F5lrRZm&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;lyJx5vcmTLsR3F5lrRZm&#39;)">✕</button></div></td>
+      </tr><tr>
+        <td><div style="font-weight:500">Icloud +  - Nuvem</div></td>
+        <td><span class="badge badge-fixo">Fixo</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 19,90</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 9,95</td>
+        <td style="">29/04/2026</td>
+        <td><span class="badge badge-paid">✓ Confirmado</span></td>
+        <td><div class="action-btns"> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;1GZSNqaHaAt6cp54M3nY&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;1GZSNqaHaAt6cp54M3nY&#39;)">✕</button></div></td>
+      </tr><tr>
+        <td><div style="font-weight:500">Apple TV</div></td>
+        <td><span class="badge badge-fixo">Fixo</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 29,90</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 14,95</td>
+        <td style="">29/04/2026</td>
+        <td><span class="badge badge-paid">✓ Confirmado</span></td>
+        <td><div class="action-btns"> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;z32OD6wXyPa3LJYDED3N&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;z32OD6wXyPa3LJYDED3N&#39;)">✕</button></div></td>
+      </tr><tr>
+        <td><div style="font-weight:500">Remédios</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px"> então vai ser
+3 tranzodona
+1 venvanse genérico
+1 venlafaxina  150 mg
+e uma venlafaxina  75 mg  lab medley</div></td>
+        <td><span class="badge badge-fixo">Fixo</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 521,15</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 521,15</td>
+        <td style="">28/04/2026</td>
+        <td><span class="badge badge-paid">✓ Confirmado</span></td>
+        <td><div class="action-btns"> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;dZmoRoaaKO9wrlJVCVW7&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;dZmoRoaaKO9wrlJVCVW7&#39;)">✕</button></div></td>
+      </tr><tr>
+        <td><div style="font-weight:500">Plano de saúde Lana</div></td>
+        <td><span class="badge badge-Lana">Lana 🐶</span></td>
+        <td><span class="tag-a">Joel</span></td>
+        <td style="font-weight:600">R$ 288,31</td>
+        <td style="color:var(--accent-b);font-weight:600">R$ 144,16</td>
+        <td style="">17/04/2026</td>
+        <td><span class="badge badge-paid">✓ Confirmado</span></td>
+        <td><div class="action-btns"> <button class="btn btn-sm btn-secondary" onclick="editDespesa(&#39;zkITGeUdRSJV53zMgNdW&#39;)">✏</button> <button class="btn btn-sm btn-danger" onclick="deleteDespesa(&#39;zkITGeUdRSJV53zMgNdW&#39;)">✕</button></div></td>
+      </tr></tbody>
+  </table></div></div>
+  </div>
+
+  <!-- PARCELAS -->
+  <div id="tab-parcelas" class="tab-content">
+    <div class="section-head">
+      <div class="section-title">Controle de Parcelas Longas</div>
+      <button class="btn btn-primary" id="btnNovaParcela" onclick="openParcelaModal()" style="">+ Nova Parcela</button>
+    </div>
+    <div id="parcelasContainer">
+    <div class="cards-row" style="margin-bottom:24px;">
+      <div class="card"><div class="card-label">Saldo Devedor Total (Apartamento + Carro)</div><div class="card-value yellow">R$ 158.126,92</div><div class="card-sub">2 parcela(s) registrada(s)</div></div>
+    </div><div class="parcela-card">
+      <div class="parcela-top">
+        <div style="flex:1;">
+          <div class="parcela-name">Apartamento</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+            <span class="badge badge-parcelado">Anual</span>
+            <span class="info-chip">Resp: Joel</span>
+            <span class="info-chip" style="color:var(--yellow)">Próx: 01/04/2027</span>
+          </div>
+          <div class="parcela-meta">Total: R$ 197.658,63 — 5 parcelas anuais até 01/04 de cada ano</div>
+        </div>
+        <div class="parcela-values">
+          <div class="parcela-total">R$ 158.126,92</div>
+          <div class="parcela-remaining">saldo restante</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">R$ 39.531,73/ano</div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:20%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--text-muted);">
+        <span>1 de 5 pagas (20%)</span><span>4 restante(s)</span>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-sm btn-warn" onclick="abrirConfirmParcela(&#39;7a5Y8OQFMUMC20EJPjJR&#39;,1,false)">Marcar Parcela 2 como paga</button></div>
+      <div class="pgto-list"><div class="pgto-item">
+        <span class="pgto-num">Parcela 1/5</span>
+        <span class="pgto-date">01/04/2026</span>
+        <span style="font-weight:600">R$ 39.531,73</span>
+        <span class="pgto-status-confirmado">✓ Confirmado — 01/04/2026</span>
+      </div><div class="pgto-item">
+        <span class="pgto-num">Parcela 2/5</span>
+        <span class="pgto-date">01/04/2027</span>
+        <span style="font-weight:600">R$ 39.531,73</span>
+        <span class="pgto-status-pendente">Pendente</span>
+      </div><div class="pgto-item">
+        <span class="pgto-num">Parcela 3/5</span>
+        <span class="pgto-date">01/04/2028</span>
+        <span style="font-weight:600">R$ 39.531,73</span>
+        <span class="pgto-status-pendente">Pendente</span>
+      </div><div class="pgto-item">
+        <span class="pgto-num">Parcela 4/5</span>
+        <span class="pgto-date">01/04/2029</span>
+        <span style="font-weight:600">R$ 39.531,73</span>
+        <span class="pgto-status-pendente">Pendente</span>
+      </div><div class="pgto-item">
+        <span class="pgto-num">Parcela 5/5</span>
+        <span class="pgto-date">01/04/2030</span>
+        <span style="font-weight:600">R$ 39.531,73</span>
+        <span class="pgto-status-pendente">Pendente</span>
+      </div></div>
+      <div style="margin-top:12px;text-align:right;"><button class="btn btn-sm btn-danger" onclick="deleteParcela(&#39;7a5Y8OQFMUMC20EJPjJR&#39;)">✕ Excluir</button></div>
+    </div><div class="parcela-card">
+      <div class="parcela-top">
+        <div style="flex:1;">
+          <div class="parcela-name">Carro — Metade do valor</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+            <span class="badge badge-parcelado">Anual</span>
+            <span class="info-chip">Resp: Joel</span>
+            <span class="info-chip" style="color:var(--green)">✓ Quitado</span>
+          </div>
+          <div class="parcela-meta">Pagamento único da metade do carro — quitado em 15/03/2026</div>
+        </div>
+        <div class="parcela-values">
+          <div class="parcela-total">R$ 0,00</div>
+          <div class="parcela-remaining">saldo restante</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">R$ 42.500,00/ano</div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--text-muted);">
+        <span>1 de 1 pagas (100%)</span><span>0 restante(s)</span>
+      </div>
+      
+      <div class="pgto-list"><div class="pgto-item">
+        <span class="pgto-num">Parcela 1/1</span>
+        <span class="pgto-date">15/03/2026</span>
+        <span style="font-weight:600">R$ 42.500,00</span>
+        <span class="pgto-status-confirmado">✓ Confirmado — 15/03/2026</span>
+      </div></div>
+      <div style="margin-top:12px;text-align:right;"><button class="btn btn-sm btn-danger" onclick="deleteParcela(&#39;YYHRa8eH7ObXcHR27nrc&#39;)">✕ Excluir</button></div>
+    </div></div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div id="tab-fixas" class="tab-content">
+    <div class="section-head">
+      <div class="section-title">Despesas Fixas Recorrentes</div>
+      <button class="btn btn-primary" id="btnNovaFixa" onclick="openFixaModal()">+ Nova Fixa</button>
+    </div>
+    <div class="notice">🔁 Despesas fixas aparecem automaticamente todo mês. Edite o valor de um mês específico sem afetar os demais.</div>
+    <div id="fixasContainer"></div>
+  </div>
+
+  <div id="tab-historico" class="tab-content">
+    <div class="section-head"><div class="section-title">Log de Alterações (Imutável)</div></div>
+    <div class="table-wrap">
+      <div style="padding:8px 16px;" id="logContainer"><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "Remédios Lana para ouvido e limpeza" — Total: R$ 200,00, Andressa deve: R$ 100,00 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">18/05/2026 07:47</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "Plano de saúde Lana" — Total: R$ 288,21, Andressa deve: R$ 144,10 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">17/05/2026 10:50</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "Consulta Fono" — Total: R$ 160,51, Andressa deve: R$ 80,25 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">10/05/2026 14:51</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "Frete remédios" — Total: R$ 77,59, Andressa deve: R$ 77,59 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">05/05/2026 14:14</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Plano de saúde Lana" — Pago (aguard. Joel) → Confirmado — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">04/05/2026 16:23</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Remédios" — Pago (aguard. Joel) → Confirmado — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">04/05/2026 16:23</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Icloud +  - Nuvem" — Pago (aguard. Joel) → Confirmado — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">04/05/2026 16:23</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Apple TV" — Pago (aguard. Joel) → Confirmado — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">04/05/2026 16:23</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Netflix" — Pago (aguard. Joel) → Confirmado — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">04/05/2026 16:23</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Spotify" — Pago (aguard. Joel) → Confirmado — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">04/05/2026 16:23</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Pensão" — Pago (aguard. Joel) → Confirmado — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">04/05/2026 16:23</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Conta Celular" — Pago (aguard. Joel) → Confirmado — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">04/05/2026 16:23</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Aventuri" — Pago (aguard. Joel) → Confirmado — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">04/05/2026 16:23</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "UNIFORME AVENTUREIROS" — Pago (aguard. Joel) → Confirmado — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">04/05/2026 16:23</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-b)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Plano de saúde Lana" — Pendente → Pago (aguard. Joel) — por Andressa</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">03/05/2026 18:57</span><span class="tag-b">Andressa</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-b)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Remédios" — Pendente → Pago (aguard. Joel) — por Andressa</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">03/05/2026 18:57</span><span class="tag-b">Andressa</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-b)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Apple TV" — Pendente → Pago (aguard. Joel) — por Andressa</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">03/05/2026 18:57</span><span class="tag-b">Andressa</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-b)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Icloud +  - Nuvem" — Pendente → Pago (aguard. Joel) — por Andressa</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">03/05/2026 18:57</span><span class="tag-b">Andressa</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-b)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Netflix" — Pendente → Pago (aguard. Joel) — por Andressa</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">03/05/2026 18:57</span><span class="tag-b">Andressa</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-b)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Spotify" — Pendente → Pago (aguard. Joel) — por Andressa</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">03/05/2026 18:57</span><span class="tag-b">Andressa</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-b)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Pensão" — Pendente → Pago (aguard. Joel) — por Andressa</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">03/05/2026 18:57</span><span class="tag-b">Andressa</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-b)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Conta Celular" — Pendente → Pago (aguard. Joel) — por Andressa</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">03/05/2026 18:57</span><span class="tag-b">Andressa</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-b)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "Aventuri" — Pendente → Pago (aguard. Joel) — por Andressa</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">03/05/2026 18:57</span><span class="tag-b">Andressa</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-b)"></div>
+      <div style="flex:1"><div class="log-msg">Status: "UNIFORME AVENTUREIROS" — Pendente → Pago (aguard. Joel) — por Andressa</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">03/05/2026 18:56</span><span class="tag-b">Andressa</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Despesa editada: "Plano de saúde Lana" — Total: R$ 288,31, Andressa deve: R$ 144,16 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">03/05/2026 18:36</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Despesa editada: "Plano de saúde Lana" — Total: R$ 288,21, Andressa deve: R$ 288,21 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">01/05/2026 12:46</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "Icloud +  - Nuvem" — Total: R$ 19,90, Andressa deve: R$ 9,95 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">29/04/2026 08:28</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "Apple TV" — Total: R$ 29,90, Andressa deve: R$ 14,95 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">29/04/2026 08:27</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "Plano de saúde Lana" — Total: R$ 288,21, Andressa deve: R$ 288,21 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">29/04/2026 08:26</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "Remédios" — Total: R$ 521,15, Andressa deve: R$ 521,15 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 11:08</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Despesa editada: "Pensão" — Total: R$ 2.100,00, Andressa deve: R$ 2.100,00 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:13</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Despesa editada: "Netflix" — Total: R$ 44,00, Andressa deve: R$ 22,00 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:12</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Despesa editada: "Spotify" — Total: R$ 40,90, Andressa deve: R$ 20,45 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:12</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Despesa editada: "Pensão" — Total: R$ 2.100,00, Andressa deve: R$ 2.100,00 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:12</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Despesa editada: "Conta Celular" — Total: R$ 151,00, Andressa deve: R$ 75,50 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:12</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Despesa editada: "Aventuri" — Total: R$ 650,00, Andressa deve: R$ 325,00 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:12</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Despesa editada: "UNIFORME AVENTUREIROS" — Total: R$ 285,00, Andressa deve: R$ 142,50 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:12</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "UNIFORME AVENTUREIROS" — Total: R$ 285,00, Andressa deve: R$ 142,50 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:11</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "Aventuri" — Total: R$ 650,00, Andressa deve: R$ 325,00 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:11</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "Conta Celular" — Total: R$ 151,00, Andressa deve: R$ 75,50 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:10</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "Pensão" — Total: R$ 2.100,00, Andressa deve: R$ 2.100,00 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:10</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "Spotify" — Total: R$ 40,90, Andressa deve: R$ 20,45 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:09</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Nova despesa: "Netflix" — Total: R$ 44,00, Andressa deve: R$ 22,00 — por Joel</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:09</span><span class="tag-a">Joel</span></div></div>
+    </div><div class="log-entry">
+      <div class="log-dot" style="background:var(--accent-a)"></div>
+      <div style="flex:1"><div class="log-msg">Sistema inicializado — parcelas do Carro e Apartamento cadastradas</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">28/04/2026 08:05</span><span class="tag-a">Joel</span></div></div>
+    </div></div>
+    </div>
+  </div>
+
+</div><!-- .main -->
+</div><!-- #appShell -->
+
+<!-- MODAL DESPESA -->
+<div class="modal-overlay" id="modalDespesa">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Nova Despesa</div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Descrição *</label><input type="text" id="f_desc" placeholder="Ex: Conta de luz de abril"></div>
+      <div class="form-group"><label>Categoria *</label>
+        <select id="f_cat"><option value="fixo">Fixo</option><option value="variavel">Variável</option><option value="parcelado">Parcelado</option><option value="gustavo">Gustavo 👦</option><option value="Lana">Lana 🐶</option> 
+        </select>
+      </div>
+      <div class="form-group"><label>Quem pagou *</label>
+        <select id="f_resp" onchange="updateDueLabel(this.value)"><option value="A">Joel</option><option value="B">Andressa</option></select>
+      </div>
+      <div class="form-group"><label>Valor Total (R$) *</label><input type="number" id="f_total" min="0" step="0.01" placeholder="0,00" oninput="calcDue()"></div>
+      <div class="form-group"><label id="f_due_label">A outra pessoa deve (R$) *</label><input type="number" id="f_due" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="form-group"><label>Vencimento *</label><input type="date" id="f_date"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="f_status"><option value="pendente">Pendente</option><option value="pago" id="statusPagoOpt">Pago</option><option value="confirmado">Confirmado</option></select>
+      </div>
+      <div class="form-group full"><label>Observações</label><textarea id="f_obs" placeholder="Informações adicionais..."></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btnSalvarDespesa" onclick="saveDespesa()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PARCELA -->
+<div class="modal-overlay" id="modalParcela">
+  <div class="modal">
+    <div class="modal-title">Nova Parcela Longa</div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Descrição *</label><input type="text" id="p_desc" placeholder="Ex: Apartamento"></div>
+      <div class="form-group"><label>Valor Total (R$) *</label><input type="number" id="p_total" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="form-group"><label>Valor de Cada Parcela (R$) *</label><input type="number" id="p_parcela" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="form-group"><label>Qtd. de Parcelas *</label><input type="number" id="p_qtd" min="1" placeholder="Ex: 5"></div>
+      <div class="form-group"><label>Periodicidade</label>
+        <select id="p_periodo"><option value="anual">Anual</option><option value="mensal">Mensal</option></select>
+      </div>
+      <div class="form-group"><label>Data da 1ª Parcela *</label><input type="date" id="p_inicio"></div>
+      <div class="form-group"><label>Responsável pelo pagamento</label>
+        <select id="p_resp"><option value="A">Joel</option><option value="B">Andressa</option><option value="ambos">Ambos (50/50)</option></select>
+      </div>
+      <div class="form-group full"><label>Observações</label><textarea id="p_obs" placeholder="Notas adicionais..."></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeParcelaModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btnSalvarParcela" onclick="saveParcela()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR PARCELA -->
+<div class="modal-overlay" id="modalConfirmParcela">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title" id="confirmParcelaTitle">Registrar Pagamento</div>
+    <div id="confirmParcelaInfo" style="color:var(--text-muted);font-size:13px;margin-bottom:20px;line-height:1.8;"></div>
+    <div class="form-group"><label>Data do Pagamento</label><input type="date" id="pgto_data"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeConfirmParcelaModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmParcela" onclick="confirmarPagamentoParcela()">✓ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getFirestore, collection, doc, addDoc, updateDoc, deleteDoc,
+  onSnapshot, setDoc, getDoc, serverTimestamp, query, orderBy
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ===== FIREBASE CONFIG =====
+const firebaseConfig = {
+  apiKey: "AIzaSyDa4qxvJFU85vaq4xOEIZHf_vRgrvvj-6k",
+  authDomain: "controle-financeiro-a2a8e.firebaseapp.com",
+  projectId: "controle-financeiro-a2a8e",
+  storageBucket: "controle-financeiro-a2a8e.firebasestorage.app",
+  messagingSenderId: "271214848244",
+  appId: "1:271214848244:web:fae2d2722e17dbf07cd6a1",
+  measurementId: "G-PV8FQFHBBF"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ===== COLLECTIONS =====
+const despesasCol = collection(db, 'despesas');
+const parcelasCol = collection(db, 'parcelas');
+const fixasCol = collection(db, 'fixas');
+const logCol = collection(db, 'log');
+
+// ===== IN-MEMORY CACHE (updated by real-time listeners) =====
+let despesasCache = [];
+let parcelasCache = [];
+let fixasCache = [];
+let logCache = [];
+
+// ===== STATE =====
+let currentProfile = 'A';
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth();
+let editingId = null;
+let editingFixaId = null;
+let confirmParcelaId = null;
+let confirmParcelaIdx = null;
+const MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const NOMES = { A:'Joel', B:'Andressa' };
+function nome(p) { return NOMES[p]||p; }
+
+// ===== SYNC UI =====
+function setSyncing(v) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  if (!dot) return;
+  dot.className = v ? 'syncing' : '';
+  lbl.textContent = v ? 'Salvando...' : 'Conectado ✓';
+}
+function setError() {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  if (!dot) return;
+  dot.className = 'error';
+  lbl.textContent = 'Erro de conexão';
+}
+
+// ===== FORMAT =====
+function fmt(v) { return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(d) { if(!d)return'—'; const[y,m,day]=d.split('-'); return`${day}/${m}/${y}`; }
+function addYears(ds,n) { const d=new Date(ds+'T12:00:00'); d.setFullYear(d.getFullYear()+n); return d.toISOString().slice(0,10); }
+function addMonths(ds,n) { const d=new Date(ds+'T12:00:00'); d.setMonth(d.getMonth()+n); return d.toISOString().slice(0,10); }
+
+// ===== LOG =====
+async function appendLog(msg) {
+  try {
+    await addDoc(logCol, { time: new Date().toISOString(), msg, user: currentProfile });
+  } catch(e) { console.error('Log error:', e); }
+}
+
+// ===== REAL-TIME LISTENERS =====
+function initListeners() {
+  // Despesas
+  onSnapshot(query(despesasCol, orderBy('createdAt','desc')), snap => {
+    despesasCache = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderAll();
+  }, err => { console.error(err); setError(); });
+
+  // Parcelas
+  onSnapshot(parcelasCol, snap => {
+    parcelasCache = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderAll();
+  }, err => { console.error(err); setError(); });
+
+  // Fixas
+  onSnapshot(query(fixasCol, orderBy('createdAt','asc')), snap => {
+    fixasCache = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderFixas();
+  }, err => { console.error(err); });
+
+  // Log
+  onSnapshot(query(logCol, orderBy('time','desc')), snap => {
+    logCache = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderLog();
+  }, err => { console.error(err); });
+}
+
+// ===== SEED PARCELAS (only if Firestore is empty) =====
+async function seedParcelasIfEmpty() {
+  const snap = await getDoc(doc(db, '_meta', 'seeded'));
+  if (snap.exists()) return;
+
+  const parcelas = [
+    {
+      desc: 'Carro — Metade do valor', total: 42500, parcela: 42500, qtd: 1,
+      inicio: '2026-03-15', resp: 'A', periodo: 'anual',
+      obs: 'Pagamento único da metade do carro — quitado em 15/03/2026',
+      pagamentos: [
+        { num:1, valor:42500, dataVenc:'2026-03-15', status:'confirmado', dataPago:'2026-03-15', confirmedBy:'A' }
+      ]
+    },
+    {
+      desc: 'Apartamento', total: 197658.63, parcela: 39531.73, qtd: 5,
+      inicio: '2026-04-01', resp: 'A', periodo: 'anual',
+      obs: 'Total: R$ 197.658,63 — 5 parcelas anuais até 01/04 de cada ano',
+      pagamentos: [
+        { num:1, valor:39531.73, dataVenc:'2026-04-01', status:'confirmado', dataPago:'2026-04-01', confirmedBy:'A' },
+        { num:2, valor:39531.73, dataVenc:'2027-04-01', status:'pendente', dataPago:null, confirmedBy:null },
+        { num:3, valor:39531.73, dataVenc:'2028-04-01', status:'pendente', dataPago:null, confirmedBy:null },
+        { num:4, valor:39531.73, dataVenc:'2029-04-01', status:'pendente', dataPago:null, confirmedBy:null },
+        { num:5, valor:39531.73, dataVenc:'2030-04-01', status:'pendente', dataPago:null, confirmedBy:null }
+      ]
+    }
+  ];
+  for (const p of parcelas) await addDoc(parcelasCol, p);
+  await setDoc(doc(db, '_meta', 'seeded'), { at: new Date().toISOString() });
+  await appendLog('Sistema inicializado — parcelas do Carro e Apartamento cadastradas');
+}
+
+// ===== PROFILE =====
+window.setProfile = function(p) {
+  currentProfile = p;
+  document.querySelectorAll('.profile-btn').forEach(b => {
+    b.className = 'profile-btn';
+    const isA = b.textContent.trim() === 'Joel';
+    if ((p==='A'&&isA)||(p==='B'&&!isA)) b.classList.add(p==='A'?'active-a':'active-b');
+  });
+  document.getElementById('profileName').textContent = nome(p);
+  const btnND = document.getElementById('btnNovaDespesa');
+  const notice = document.getElementById('novaNotice');
+  const btnNP = document.getElementById('btnNovaParcela');
+  if (p==='A') { btnND.style.display=''; notice.style.display='none'; if(btnNP)btnNP.style.display=''; }
+  else { btnND.style.display=''; notice.style.display=''; if(btnNP)btnNP.style.display='none'; }
+  renderAll();
+};
+
+// ===== TABS =====
+window.showTab = function(t, el) {
+  document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(el)el.classList.add('active');
+  renderAll();
+};
+
+function renderAll() { renderDashboard(); renderDespesas(); renderParcelas(); renderFixas(); renderLog(); }
+
+// ===== DASHBOARD =====
+window.changeMonth = function(d) {
+  currentMonth+=d;
+  if(currentMonth>11){currentMonth=0;currentYear++;}
+  if(currentMonth<0){currentMonth=11;currentYear--;}
+  renderDashboard();
+};
+
+function calcSaldo(list) {
+  // Joel pagou → Andressa deve a Joel: d.resp==='A' → d.due é crédito do Joel
+  // Andressa pagou → Joel deve a Andressa: d.resp==='B' → d.due é crédito da Andressa
+  // Saldo final = (Andressa deve a Joel) - (Joel deve a Andressa)
+  // Positivo: Andressa ainda precisa pagar Joel
+  // Negativo: Joel deve mais a Andressa (raro, mas possível)
+  const andressaDeveAJoel = list
+    .filter(d=>d.resp==='A' && d.status==='pendente')
+    .reduce((s,d)=>s+Number(d.due),0);
+  const joelDeveAAndressa = list
+    .filter(d=>d.resp==='B' && d.status==='pendente')
+    .reduce((s,d)=>s+Number(d.due),0);
+  const andressaPagouAguard = list
+    .filter(d=>d.resp==='A' && d.status==='pago')
+    .reduce((s,d)=>s+Number(d.due),0);
+  const joelPagouAguard = list
+    .filter(d=>d.resp==='B' && d.status==='pago')
+    .reduce((s,d)=>s+Number(d.due),0);
+  return { andressaDeveAJoel, joelDeveAAndressa, andressaPagouAguard, joelPagouAguard };
+}
+
+function renderDashboard() {
+  document.getElementById('monthLabel').textContent = MONTHS_PT[currentMonth]+' '+currentYear;
+  const monthly = despesasCache.filter(d => {
+    if(!d.date)return false;
+    const[y,m]=d.date.split('-');
+    return parseInt(y)===currentYear && parseInt(m)-1===currentMonth;
+  });
+  const { andressaDeveAJoel, joelDeveAAndressa, andressaPagouAguard, joelPagouAguard } = calcSaldo(monthly);
+  
+  // Saldo líquido pendente: quanto Andressa ainda deve a Joel no final
+  const saldoLiquidoPendente = andressaDeveAJoel - joelDeveAAndressa;
+  // Saldo em processamento (pago mas aguard. confirmação)
+  const saldoAguard = andressaPagouAguard - joelPagouAguard;
+  
+  const confirmado = monthly.filter(d=>d.status==='confirmado').reduce((s,d)=>s+Number(d.due),0);
+  const totalMes = monthly.reduce((s,d)=>s+Number(d.total),0);
+  const gustavo = monthly.filter(d=>d.cat==='gustavo').reduce((s,d)=>s+Number(d.total),0);
+
+  // Card de saldo líquido: mostra resultado final esperado
+  const saldoLabel = saldoLiquidoPendente >= 0 
+    ? 'Andressa deve a Joel' 
+    : 'Joel deve a Andressa';
+  const saldoColor = saldoLiquidoPendente >= 0 ? 'red' : 'yellow';
+  const saldoSub = saldoLiquidoPendente >= 0
+    ? `Joel recebe (bruto ${fmt(andressaDeveAJoel)}${joelDeveAAndressa>0?' − Joel deve '+fmt(joelDeveAAndressa):''})`
+    : `Andressa recebe (bruto ${fmt(joelDeveAAndressa)}${andressaDeveAJoel>0?' − Andressa deve '+fmt(andressaDeveAJoel):''})`; 
+
+  let cardsHtml = `
+    <div class="card"><div class="card-label">Total do Mês</div><div class="card-value white">${fmt(totalMes)}</div><div class="card-sub">${monthly.length} lançamento(s)</div></div>
+    <div class="card"><div class="card-label">${saldoLabel}</div><div class="card-value ${saldoColor}">${fmt(Math.abs(saldoLiquidoPendente))}</div><div class="card-sub">${saldoSub}</div></div>
+  `;
+  if(joelDeveAAndressa>0) cardsHtml+=`<div class="card"><div class="card-label">Joel deve a Andressa</div><div class="card-value yellow">${fmt(joelDeveAAndressa)}</div><div class="card-sub">Andressa pagou, Joel deve sua parte</div></div>`;
+  if(Math.abs(saldoAguard)>0){
+    const aguardLabel = saldoAguard>=0 ? 'Andressa pagou — confirmar' : 'Joel pagou — confirmar';
+    cardsHtml+=`<div class="card"><div class="card-label">${aguardLabel}</div><div class="card-value yellow">${fmt(Math.abs(saldoAguard))}</div><div class="card-sub">Aguardando confirmação</div></div>`;
+  }
+  const confirmadoTotal = monthly.filter(d=>d.status==='confirmado').reduce((s,d)=>s+Number(d.due),0);
+  cardsHtml+=`<div class="card"><div class="card-label">✓ Confirmados</div><div class="card-value green">${fmt(confirmadoTotal)}</div><div class="card-sub">Quitados este mês</div></div>`;
+  if(gustavo>0) cardsHtml+=`<div class="card"><div class="card-label">💜 Gustavo</div><div class="card-value purple">${fmt(gustavo)}</div><div class="card-sub">Custos com o Gustavo</div></div>`;
+  document.getElementById('dashCards').innerHTML = cardsHtml;
+  document.getElementById('dashTable').innerHTML = monthly.length===0
+    ? `<div class="empty"><div class="empty-icon">📭</div><div>Nenhum lançamento neste mês</div></div>`
+    : buildTable(monthly, false);
+}
+
+// ===== TABLE =====
+function buildTable(rows, showActions) {
+  const catLabel={fixo:'Fixo',variavel:'Variável',parcelado:'Parcelado',gustavo:'Gustavo 👦',Lana:'Lana 🐶'};
+  const catBadge={fixo:'badge-fixo',variavel:'badge-variavel',parcelado:'badge-parcelado',gustavo:'badge-gustavo',Lana:'badge-Lana'};
+  const stLabel={pendente:'Pendente',pago:'Pago — aguard. Joel',confirmado:'✓ Confirmado'};
+  const stBadge={pendente:'badge-pending',pago:'badge-aguard',confirmado:'badge-paid'};
+  const hoje=new Date().toISOString().slice(0,10);
+  return `<div class="table-wrap"><table>
+    <thead><tr>
+      <th>Descrição</th><th>Categoria</th><th>Pago por</th>
+      <th>Total</th><th>Devedor deve</th><th>Vencimento</th><th>Status</th>
+      ${showActions?'<th>Ações</th>':''}
+    </tr></thead>
+    <tbody>${rows.map(d=>{
+      const late=d.status==='pendente'&&d.date&&d.date<hoje;
+      let acoes='';
+      if(showActions){
+        // resp=A: Joel pagou, Andressa é devedora
+        // resp=B: Andressa pagou, Joel é devedor
+        if(d.resp==='A'){
+          // Normal flow: Andressa marks paid, Joel confirms
+          if(currentProfile==='B'){
+            if(d.status==='pendente') acoes=`<button class="btn btn-sm btn-success" onclick="updateStatus('${d.id}','pago')">✓ Paguei</button>`;
+          } else {
+            if(d.status==='pago') acoes+=`<button class="btn btn-sm btn-confirm" onclick="updateStatus('${d.id}','confirmado')">✓ Recebi</button>`;
+            if(d.status==='pendente') acoes+=`<button class="btn btn-sm btn-warn" onclick="updateStatus('${d.id}','pago')">Marcar pago</button>`;
+          }
+        } else {
+          // Andressa paid, Joel is debtor: Joel marks paid, Andressa confirms
+          if(currentProfile==='A'){
+            if(d.status==='pendente') acoes=`<button class="btn btn-sm btn-success" onclick="updateStatus('${d.id}','pago')">✓ Paguei minha parte</button>`;
+            if(d.status==='pago') acoes+=`<button class="btn btn-sm btn-confirm" onclick="updateStatus('${d.id}','confirmado')">✓ Confirmar</button>`;
+          } else {
+            if(d.status==='pendente') acoes+=`<button class="btn btn-sm btn-warn" onclick="updateStatus('${d.id}','pago')">Marcar pago</button>`;
+          }
+        }
+        // Edit/delete: both can edit their own, Joel can always edit
+        if(currentProfile==='A'||d.resp===currentProfile){
+          acoes+=` <button class="btn btn-sm btn-secondary" onclick="editDespesa('${d.id}')">✏</button>`;
+        }
+        if(currentProfile==='A'){
+          acoes+=` <button class="btn btn-sm btn-danger" onclick="deleteDespesa('${d.id}')">✕</button>`;
+        }
+      }
+      return `<tr>
+        <td><div style="font-weight:500">${d.desc}</div>${d.obs?`<div style="font-size:11px;color:var(--text-muted);margin-top:2px">${d.obs}</div>`:''}</td>
+        <td><span class="badge ${catBadge[d.cat]||''}">${catLabel[d.cat]||d.cat}</span></td>
+        <td><span class="${d.resp==='A'?'tag-a':'tag-b'}">${nome(d.resp)}</span></td>
+        <td style="font-weight:600">${fmt(d.total)}</td>
+        <td style="color:${d.resp==='B'?'var(--accent-warn)':'var(--accent-b)'};font-weight:600">${fmt(d.due)}<span style="font-size:10px;margin-left:4px;opacity:0.7">${d.resp==='B'?'← Joel':'→ Andr'}</span></td>
+        <td style="${late?'color:var(--red)':''}">${fmtDate(d.date)}${late?' ⚠️':''}</td>
+        <td><span class="badge ${stBadge[d.status]||''}">${stLabel[d.status]||d.status}</span></td>
+        ${showActions?`<td><div class="action-btns">${acoes}</div></td>`:''}
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+// ===== DESPESAS RENDER =====
+function renderDespesas() {
+  let rows = [...despesasCache];
+  const fs=document.getElementById('filterStatus')?.value||'';
+  const fc=document.getElementById('filterCategoria')?.value||'';
+  const fq=(document.getElementById('filterSearch')?.value||'').toLowerCase();
+  if(fs) rows=rows.filter(d=>d.status===fs);
+  if(fc) rows=rows.filter(d=>d.cat===fc);
+  if(fq) rows=rows.filter(d=>d.desc.toLowerCase().includes(fq));
+  rows.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  document.getElementById('despesasTable').innerHTML = rows.length===0
+    ? `<div class="empty"><div class="empty-icon">📋</div><div>Nenhuma despesa encontrada</div></div>`
+    : buildTable(rows, true);
+}
+
+// ===== MODAL DESPESA =====
+window.openModal = function(id) {
+  editingId=id||null;
+  document.getElementById('modalTitle').textContent=id?'Editar Despesa':'Nova Despesa';
+  if(id){
+    const d=despesasCache.find(x=>x.id===id);
+    if(d){
+      document.getElementById('f_desc').value=d.desc;
+      document.getElementById('f_cat').value=d.cat;
+      document.getElementById('f_resp').value=d.resp;
+      document.getElementById('f_total').value=d.total;
+      document.getElementById('f_due').value=d.due;
+      document.getElementById('f_date').value=d.date;
+      document.getElementById('f_status').value=d.status;
+      document.getElementById('f_obs').value=d.obs||'';
+    }
+  } else {
+    document.getElementById('f_desc').value='';
+    document.getElementById('f_cat').value='fixo';
+    document.getElementById('f_resp').value=currentProfile==='B'?'B':'A';
+    document.getElementById('f_total').value='';
+    document.getElementById('f_due').value='';
+    document.getElementById('f_date').value=new Date().toISOString().slice(0,10);
+    document.getElementById('f_status').value='pendente';
+    document.getElementById('f_obs').value='';
+  }
+  // Update due label based on who paid
+  const respVal = document.getElementById('f_resp').value;
+  const dueLbl = document.getElementById('f_due_label');
+  if(dueLbl) dueLbl.textContent = respVal==='B' ? 'Joel deve (R$) *' : 'Andressa deve (R$) *';
+  document.getElementById('modalDespesa').classList.add('open');
+};
+window.closeModal = function(id) {
+  if (id) { document.getElementById(id).classList.remove('open'); return; }
+  document.getElementById('modalDespesa').classList.remove('open');
+  editingId = null;
+};
+window.calcDue = function() { const t=parseFloat(document.getElementById('f_total').value)||0; document.getElementById('f_due').value=(t/2).toFixed(2); };
+window.updateDueLabel = function(respVal) {
+  const lbl=document.getElementById('f_due_label');
+  if(lbl) lbl.textContent = respVal==='B' ? 'Joel deve (R$) *' : 'Andressa deve (R$) *';
+};
+
+window.saveDespesa = async function() {
+  const desc=document.getElementById('f_desc').value.trim();
+  const total=parseFloat(document.getElementById('f_total').value);
+  const due=parseFloat(document.getElementById('f_due').value);
+  const date=document.getElementById('f_date').value;
+  if(!desc||isNaN(total)||isNaN(due)||!date){alert('Preencha todos os campos obrigatórios.');return;}
+
+  const btn=document.getElementById('btnSalvarDespesa');
+  btn.disabled=true; btn.textContent='Salvando...';
+  setSyncing(true);
+
+  const entry={desc,cat:document.getElementById('f_cat').value,resp:document.getElementById('f_resp').value,total,due,date,status:document.getElementById('f_status').value,obs:document.getElementById('f_obs').value};
+  try {
+    if(editingId){
+      await updateDoc(doc(db,'despesas',editingId), entry);
+      const dueWho=document.getElementById("f_resp").value==="B"?"Joel deve":"Andressa deve"; await appendLog(`Despesa editada: "${desc}" — Total: ${fmt(total)}, ${dueWho}: ${fmt(due)} — por ${nome(currentProfile)}`);
+    } else {
+      entry.createdBy=currentProfile;
+      entry.createdAt=new Date().toISOString();
+      await addDoc(despesasCol, entry);
+      const dueWhoNew=entry.resp==="B"?"Joel deve":"Andressa deve"; await appendLog(`Nova despesa: "${desc}" — Total: ${fmt(total)}, ${dueWhoNew}: ${fmt(due)} — por ${nome(currentProfile)}`);
+    }
+    closeModal();
+  } catch(e) { alert('Erro ao salvar: '+e.message); setError(); }
+  finally { btn.disabled=false; btn.textContent='Salvar'; setSyncing(false); }
+};
+
+window.editDespesa = function(id) { openModal(id); };
+
+window.deleteDespesa = async function(id) {
+  if(currentProfile!=='A'){alert('Apenas o Joel pode excluir.');return;}
+  if(!confirm('Excluir esta despesa?'))return;
+  setSyncing(true);
+  const d=despesasCache.find(x=>x.id===id);
+  try {
+    await deleteDoc(doc(db,'despesas',id));
+    await appendLog(`Despesa excluída: "${d?.desc}" — por ${nome(currentProfile)}`);
+  } catch(e){alert('Erro: '+e.message);setError();}
+  finally{setSyncing(false);}
+};
+
+window.updateStatus = async function(id, newStatus) {
+  const d=despesasCache.find(x=>x.id===id);
+  if(currentProfile==='B'){
+    if(d?.resp==='B' && newStatus==='confirmado'){
+      // ok: Andressa confirming Joel paid her back
+    } else if(newStatus!=='pago'){
+      alert('Andressa só pode marcar como pago.');return;
+    }
+  }
+  setSyncing(true);
+  const labels={pendente:'Pendente',pago:'Pago (aguard. Joel)',confirmado:'Confirmado'};
+  try {
+    await updateDoc(doc(db,'despesas',id),{status:newStatus});
+    await appendLog(`Status: "${d?.desc}" — ${labels[d?.status]||d?.status} → ${labels[newStatus]||newStatus} — por ${nome(currentProfile)}`);
+  } catch(e){alert('Erro: '+e.message);setError();}
+  finally{setSyncing(false);}
+};
+
+// ===== MODAL PARCELA =====
+window.openParcelaModal = function() {
+  if(currentProfile!=='A'){alert('Apenas o Joel pode cadastrar parcelas.');return;}
+  ['p_desc','p_total','p_parcela','p_qtd','p_obs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('p_resp').value='A';
+  document.getElementById('p_periodo').value='anual';
+  document.getElementById('p_inicio').value='';
+  document.getElementById('modalParcela').classList.add('open');
+};
+window.closeParcelaModal = function() { document.getElementById('modalParcela').classList.remove('open'); };
+
+window.saveParcela = async function() {
+  const desc=document.getElementById('p_desc').value.trim();
+  const total=parseFloat(document.getElementById('p_total').value);
+  const parcela=parseFloat(document.getElementById('p_parcela').value);
+  const qtd=parseInt(document.getElementById('p_qtd').value);
+  const inicio=document.getElementById('p_inicio').value;
+  const resp=document.getElementById('p_resp').value;
+  const periodo=document.getElementById('p_periodo').value;
+  const obs=document.getElementById('p_obs').value;
+  if(!desc||isNaN(total)||isNaN(parcela)||isNaN(qtd)||!inicio){alert('Preencha todos os campos obrigatórios.');return;}
+
+  const pagamentos=[];
+  for(let i=0;i<qtd;i++){
+    const dataVenc=periodo==='anual'?addYears(inicio,i):addMonths(inicio,i);
+    pagamentos.push({num:i+1,valor:parcela,dataVenc,status:'pendente',dataPago:null,confirmedBy:null});
+  }
+
+  const btn=document.getElementById('btnSalvarParcela');
+  btn.disabled=true; btn.textContent='Salvando...';
+  setSyncing(true);
+  try {
+    await addDoc(parcelasCol,{desc,total,parcela,qtd,inicio,resp,periodo,obs,pagamentos});
+    await appendLog(`Parcela longa cadastrada: "${desc}" — ${qtd}x ${periodo}(is) de ${fmt(parcela)} — por ${nome(currentProfile)}`);
+    closeParcelaModal();
+  } catch(e){alert('Erro: '+e.message);setError();}
+  finally{btn.disabled=false;btn.textContent='Salvar';setSyncing(false);}
+};
+
+window.deleteParcela = async function(id) {
+  if(currentProfile!=='A'){alert('Apenas o Joel pode excluir.');return;}
+  if(!confirm('Excluir esta parcela e todo seu histórico?'))return;
+  setSyncing(true);
+  const p=parcelasCache.find(x=>x.id===id);
+  try {
+    await deleteDoc(doc(db,'parcelas',id));
+    await appendLog(`Parcela excluída: "${p?.desc}" — por ${nome(currentProfile)}`);
+  } catch(e){alert('Erro: '+e.message);setError();}
+  finally{setSyncing(false);}
+};
+
+window.abrirConfirmParcela = function(parcelaId, pgtoIdx, modoConfirm) {
+  confirmParcelaId=parcelaId; confirmParcelaIdx=pgtoIdx;
+  const p=parcelasCache.find(x=>x.id===parcelaId);
+  const pg=p.pagamentos[pgtoIdx];
+  document.getElementById('confirmParcelaTitle').textContent=modoConfirm?'Joel: Confirmar Recebimento':'Andressa: Registrar Pagamento';
+  document.getElementById('confirmParcelaInfo').innerHTML=`<strong>${p.desc}</strong><br>Parcela <strong>${pg.num}/${p.qtd}</strong><br>Valor: <strong style="color:var(--accent-warn)">${fmt(pg.valor)}</strong><br>Vencimento: ${fmtDate(pg.dataVenc)}`;
+  document.getElementById('pgto_data').value=new Date().toISOString().slice(0,10);
+  document.getElementById('btnConfirmParcela').textContent=modoConfirm?'✓ Confirmar Recebimento':'✓ Marcar como Pago';
+  document.getElementById('modalConfirmParcela').classList.add('open');
+};
+window.closeConfirmParcelaModal = function() { document.getElementById('modalConfirmParcela').classList.remove('open'); confirmParcelaId=null; confirmParcelaIdx=null; };
+
+window.confirmarPagamentoParcela = async function() {
+  const dataPago=document.getElementById('pgto_data').value;
+  if(!dataPago){alert('Informe a data.');return;}
+  const p=parcelasCache.find(x=>x.id===confirmParcelaId);
+  if(!p)return;
+  const newPagamentos=[...p.pagamentos];
+  const pg=newPagamentos[confirmParcelaIdx];
+  const btn=document.getElementById('btnConfirmParcela');
+  btn.disabled=true; setSyncing(true);
+
+  if(currentProfile==='B'){
+    pg.status='pago'; pg.dataPago=dataPago;
+  } else {
+    pg.status='confirmado'; pg.dataPago=dataPago; pg.confirmedBy='A';
+  }
+  try {
+    await updateDoc(doc(db,'parcelas',confirmParcelaId),{pagamentos:newPagamentos});
+    await appendLog(`Parcela "${p.desc}" — #${pg.num} ${currentProfile==='B'?'marcada como PAGA':'CONFIRMADA'} em ${fmtDate(dataPago)} — por ${nome(currentProfile)}`);
+    closeConfirmParcelaModal();
+  } catch(e){alert('Erro: '+e.message);setError();}
+  finally{btn.disabled=false;setSyncing(false);}
+};
+
+// ===== RENDER PARCELAS =====
+function renderParcelas() {
+  const cont=document.getElementById('parcelasContainer');
+  if(!cont)return;
+  if(parcelasCache.length===0){cont.innerHTML=`<div class="empty"><div class="empty-icon">🏠</div><div>Nenhuma parcela cadastrada</div></div>`;return;}
+
+  let totalSaldo=0; let html='';
+  parcelasCache.forEach(p=>{
+    const confirmadas=p.pagamentos.filter(x=>x.status==='confirmado').length;
+    const pagas=p.pagamentos.filter(x=>x.status==='pago').length;
+    const totalPagas=confirmadas+pagas;
+    const restantes=p.qtd-totalPagas;
+    const saldo=restantes*p.parcela;
+    totalSaldo+=saldo;
+    const pct=Math.round((totalPagas/p.qtd)*100);
+    const proxPendente=p.pagamentos.find(x=>x.status==='pendente');
+    const proxAguard=p.pagamentos.find(x=>x.status==='pago');
+
+    let btnAcoes='';
+    if(proxPendente){
+      const pi=p.pagamentos.indexOf(proxPendente);
+      if(currentProfile==='B') btnAcoes+=`<button class="btn btn-sm btn-success" onclick="abrirConfirmParcela('${p.id}',${pi},false)">✓ Registrar Pagamento — Parcela ${proxPendente.num} (${fmtDate(proxPendente.dataVenc)})</button>`;
+      else btnAcoes+=`<button class="btn btn-sm btn-warn" onclick="abrirConfirmParcela('${p.id}',${pi},false)">Marcar Parcela ${proxPendente.num} como paga</button>`;
+    }
+    if(proxAguard&&currentProfile==='A'){
+      const pi=p.pagamentos.indexOf(proxAguard);
+      btnAcoes+=` <button class="btn btn-sm btn-confirm" onclick="abrirConfirmParcela('${p.id}',${pi},true)">✓ Confirmar recebimento — Parcela ${proxAguard.num}</button>`;
+    }
+
+    const listaPgtos=p.pagamentos.map(pg=>{
+      const stClass={pendente:'pgto-status-pendente',pago:'pgto-status-pago',confirmado:'pgto-status-confirmado'}[pg.status]||'';
+      const stLbl={pendente:'Pendente',pago:'Pago — aguard. Joel',confirmado:'✓ Confirmado'}[pg.status]||pg.status;
+      return `<div class="pgto-item">
+        <span class="pgto-num">Parcela ${pg.num}/${p.qtd}</span>
+        <span class="pgto-date">${fmtDate(pg.dataVenc)}</span>
+        <span style="font-weight:600">${fmt(pg.valor)}</span>
+        <span class="${stClass}">${stLbl}${pg.dataPago?' — '+fmtDate(pg.dataPago):''}</span>
+      </div>`;
+    }).join('');
+
+    html+=`<div class="parcela-card">
+      <div class="parcela-top">
+        <div style="flex:1;">
+          <div class="parcela-name">${p.desc}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+            <span class="badge badge-parcelado">${p.periodo==='anual'?'Anual':'Mensal'}</span>
+            <span class="info-chip">Resp: ${p.resp==='ambos'?'Ambos':nome(p.resp)}</span>
+            ${proxPendente?`<span class="info-chip" style="color:var(--yellow)">Próx: ${fmtDate(proxPendente.dataVenc)}</span>`:'<span class="info-chip" style="color:var(--green)">✓ Quitado</span>'}
+          </div>
+          ${p.obs?`<div class="parcela-meta">${p.obs}</div>`:''}
+        </div>
+        <div class="parcela-values">
+          <div class="parcela-total">${fmt(saldo)}</div>
+          <div class="parcela-remaining">saldo restante</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:3px;">${fmt(p.parcela)}/${p.periodo==='anual'?'ano':'mês'}</div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--text-muted);">
+        <span>${totalPagas} de ${p.qtd} pagas (${pct}%)</span><span>${restantes} restante(s)</span>
+      </div>
+      ${btnAcoes?`<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">${btnAcoes}</div>`:''}
+      <div class="pgto-list">${listaPgtos}</div>
+      ${currentProfile==='A'?`<div style="margin-top:12px;text-align:right;"><button class="btn btn-sm btn-danger" onclick="deleteParcela('${p.id}')">✕ Excluir</button></div>`:''}
+    </div>`;
+  });
+
+  cont.innerHTML=`
+    <div class="cards-row" style="margin-bottom:24px;">
+      <div class="card"><div class="card-label">Saldo Devedor Total (Apartamento + Carro)</div><div class="card-value yellow">${fmt(totalSaldo)}</div><div class="card-sub">${parcelasCache.length} parcela(s) registrada(s)</div></div>
+    </div>${html}`;
+}
+
+// ===== RENDER LOG =====
+function renderLog() {
+  const cont=document.getElementById('logContainer');
+  if(!cont)return;
+  if(logCache.length===0){cont.innerHTML=`<div class="empty"><div class="empty-icon">📜</div><div>Nenhum registro ainda</div></div>`;return;}
+  cont.innerHTML=logCache.map(l=>{
+    const dt=new Date(l.time);
+    const ds=dt.toLocaleDateString('pt-BR')+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="log-entry">
+      <div class="log-dot" style="background:${l.user==='A'?'var(--accent-a)':'var(--accent-b)'}"></div>
+      <div style="flex:1"><div class="log-msg">${l.msg}</div>
+      <div style="display:flex;gap:8px;margin-top:4px;"><span class="log-time">${ds}</span><span class="${l.user==='A'?'tag-a':'tag-b'}">${nome(l.user)}</span></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ===== EXPORT =====
+window.exportExcel = function() {
+  const catLabel={fixo:'Fixo',variavel:'Variável',parcelado:'Parcelado',gustavo:'Gustavo'};
+  const stLabel={pendente:'Pendente',pago:'Pago (aguard. Joel)',confirmado:'Confirmado'};
+  let csv='\uFEFF';
+  csv+='Descrição;Categoria;Quem Pagou;Valor Total;Andressa Deve;Vencimento;Status;Observações\n';
+  despesasCache.forEach(d=>{
+    csv+=[`"${d.desc}"`,catLabel[d.cat]||d.cat,nome(d.resp),d.total.toFixed(2).replace('.',','),d.due.toFixed(2).replace('.',','),fmtDate(d.date),stLabel[d.status]||d.status,`"${d.obs||''}"`].join(';')+'\n';
+  });
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`financas_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  appendLog(`Exportação para Excel — por ${nome(currentProfile)}`);
+};
+
+
+// ===== FIXAS — DESPESAS RECORRENTES =====
+
+// Gera a data de vencimento para um dado mês/ano com base no dia configurado
+function fixaDateForMonth(dia, year, month) {
+  const maxDay = new Date(year, month + 1, 0).getDate(); // último dia do mês
+  const d = Math.min(dia, maxDay);
+  return `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+// Chave de deduplicação: garante que cada fixa gera no máximo 1 despesa por mês
+function fixaKey(fixaId, year, month) {
+  return `fixa_${fixaId}_${year}_${String(month+1).padStart(2,'0')}`;
+}
+
+// Garante que todas as fixas ativas têm uma despesa gerada para o mês exibido
+async function ensureFixasForMonth(year, month) {
+  const ativas = fixasCache.filter(f => !f.pausada);
+  for (const fixa of ativas) {
+    const chave = fixaKey(fixa.id, year, month);
+    const jaExiste = despesasCache.some(d => d.fixaKey === chave);
+    if (jaExiste) continue;
+    const dataVenc = fixaDateForMonth(fixa.dia, year, month);
+    await addDoc(despesasCol, {
+      desc: fixa.desc,
+      cat: fixa.cat,
+      resp: fixa.resp,
+      total: fixa.valor,
+      due: fixa.due,
+      date: dataVenc,
+      status: 'pendente',
+      obs: fixa.obs || '',
+      fixaKey: chave,
+      fixaId: fixa.id,
+      createdAt: new Date().toISOString(),
+    });
+  }
+}
+
+// Render da aba Fixas
+function renderFixas() {
+  const cont = document.getElementById('fixasContainer');
+  if (!cont) return;
+
+  if (fixasCache.length === 0) {
+    cont.innerHTML = `<div style="text-align:center;padding:48px 24px;color:var(--muted)">
+      <div style="font-size:40px;margin-bottom:12px">🔁</div>
+      <div>Nenhuma despesa fixa cadastrada</div>
+      <div style="font-size:12px;margin-top:8px">Cadastre despesas que se repetem todo mês automaticamente</div>
+    </div>`;
+    return;
+  }
+
+  const catLabel = { fixo:'Fixo', variavel:'Variável', gustavo:'Gustavo 👶', lana:'Lana 🐾', assinatura:'Assinatura', saude:'Saúde', outros:'Outros' };
+
+  cont.innerHTML = fixasCache.map(f => {
+    const cor = f.pausada ? 'var(--muted)' : 'var(--accent)';
+    const statusLabel = f.pausada
+      ? '<span style="background:rgba(107,114,128,.2);color:var(--muted);padding:2px 8px;border-radius:4px;font-size:11px;">Pausada</span>'
+      : '<span style="background:rgba(127,255,178,.15);color:var(--accent);padding:2px 8px;border-radius:4px;font-size:11px;">Ativa</span>';
+    const respLabel = f.resp === 'A' ? 'Joel paga' : 'Andressa paga';
+    const dueLabel = f.resp === 'A' ? `Andressa deve: <strong>${fmt(f.due)}</strong>` : `Joel deve: <strong>${fmt(f.due)}</strong>`;
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-weight:600;font-size:15px;color:${cor};margin-bottom:4px;">${f.desc}</div>
+          <div style="font-size:12px;color:var(--muted);">${catLabel[f.cat]||f.cat} · ${respLabel} · vence dia ${f.dia}</div>
+          <div style="font-size:12px;color:var(--dim);margin-top:2px;">${dueLabel}</div>
+          ${f.obs ? `<div style="font-size:12px;color:var(--muted);margin-top:4px;">${f.obs}</div>` : ''}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          ${statusLabel}
+          <div style="font-size:22px;font-weight:700;color:${cor};margin-top:6px;">${fmt(f.valor)}</div>
+          <div style="font-size:11px;color:var(--muted);">por mês</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+        <button class="btn btn-sm btn-secondary" onclick="editFixa('${f.id}')">✏ Editar</button>
+        ${f.pausada
+          ? `<button class="btn btn-sm btn-success" onclick="toggleFixa('${f.id}',false)">▶ Reativar</button>`
+          : `<button class="btn btn-sm btn-warn" onclick="toggleFixa('${f.id}',true)">⏸ Pausar</button>`}
+        <button class="btn btn-sm btn-danger" onclick="deleteFixa('${f.id}','${f.desc.replace(/'/g,"\'")}')">✕ Excluir</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Abre modal para nova fixa
+window.openFixaModal = function() {
+  editingFixaId = null;
+  document.getElementById('fixaModalTitle').textContent = 'Nova Despesa Fixa';
+  document.getElementById('fx_desc').value = '';
+  document.getElementById('fx_cat').value = 'fixo';
+  document.getElementById('fx_resp').value = 'A';
+  document.getElementById('fx_valor').value = '';
+  document.getElementById('fx_due').value = '';
+  document.getElementById('fx_dia').value = '';
+  document.getElementById('fx_obs').value = '';
+  document.getElementById('fx_due_label').textContent = 'Andressa deve (R$) *';
+  document.getElementById('modalFixa').classList.add('open');
+};
+
+window.editFixa = function(id) {
+  const f = fixasCache.find(x => x.id === id);
+  if (!f) return;
+  editingFixaId = id;
+  document.getElementById('fixaModalTitle').textContent = 'Editar Despesa Fixa';
+  document.getElementById('fx_desc').value = f.desc;
+  document.getElementById('fx_cat').value = f.cat;
+  document.getElementById('fx_resp').value = f.resp;
+  document.getElementById('fx_valor').value = f.valor;
+  document.getElementById('fx_due').value = f.due;
+  document.getElementById('fx_dia').value = f.dia;
+  document.getElementById('fx_obs').value = f.obs || '';
+  document.getElementById('fx_due_label').textContent = f.resp === 'B' ? 'Joel deve (R$) *' : 'Andressa deve (R$) *';
+  document.getElementById('modalFixa').classList.add('open');
+};
+
+window.calcFixaDue = function() {
+  const t = parseFloat(document.getElementById('fx_valor').value) || 0;
+  document.getElementById('fx_due').value = (t / 2).toFixed(2);
+};
+
+window.saveFixa = async function() {
+  const desc = document.getElementById('fx_desc').value.trim();
+  const cat = document.getElementById('fx_cat').value;
+  const resp = document.getElementById('fx_resp').value;
+  const valor = parseFloat(document.getElementById('fx_valor').value);
+  const due = parseFloat(document.getElementById('fx_due').value);
+  const dia = parseInt(document.getElementById('fx_dia').value);
+  const obs = document.getElementById('fx_obs').value.trim();
+  if (!desc || isNaN(valor) || isNaN(due) || isNaN(dia) || dia < 1 || dia > 31) {
+    alert('Preencha todos os campos obrigatórios (dia entre 1 e 31).');
+    return;
+  }
+  const btn = document.getElementById('btnSalvarFixa');
+  btn.disabled = true;
+  setSyncing(true);
+  try {
+    if (editingFixaId) {
+      await updateDoc(doc(db, 'fixas', editingFixaId), { desc, cat, resp, valor, due, dia, obs });
+      await appendLog(`Fixa editada: "${desc}" — ${fmt(valor)}/mês`);
+    } else {
+      await addDoc(fixasCol, { desc, cat, resp, valor, due, dia, obs, pausada: false, createdAt: new Date().toISOString() });
+      await appendLog(`Nova fixa: "${desc}" — ${fmt(valor)}/mês, vence dia ${dia}`);
+      // Gera imediatamente para o mês atual
+      await ensureFixasForMonth(currentYear, currentMonth);
+    }
+    document.getElementById('modalFixa').classList.remove('open');
+    editingFixaId = null;
+  } catch(e) { alert('Erro: ' + e.message); }
+  finally { btn.disabled = false; setSyncing(false); }
+};
+
+window.toggleFixa = async function(id, pausar) {
+  const f = fixasCache.find(x => x.id === id);
+  if (!f) return;
+  setSyncing(true);
+  try {
+    await updateDoc(doc(db, 'fixas', id), { pausada: pausar });
+    await appendLog(`Fixa ${pausar ? 'pausada' : 'reativada'}: "${f.desc}"`);
+  } catch(e) { alert('Erro: ' + e.message); }
+  finally { setSyncing(false); }
+};
+
+window.deleteFixa = async function(id, desc) {
+  if (!confirm(`Excluir a fixa "${desc}"? As despesas já geradas para meses anteriores continuam.`)) return;
+  setSyncing(true);
+  try {
+    await deleteDoc(doc(db, 'fixas', id));
+    await appendLog(`Fixa excluída: "${desc}"`);
+  } catch(e) { alert('Erro: ' + e.message); }
+  finally { setSyncing(false); }
+};
+
+
+// ===== INIT =====
+(async function() {
+  try {
+    await seedParcelasIfEmpty();
+    initListeners();
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('appShell').style.display='block';
+    renderAll();
+    // Gera fixas para o mês atual ao iniciar
+    setTimeout(() => ensureFixasForMonth(currentYear, currentMonth), 1500);
+  } catch(e) {
+    document.querySelector('.loading-text').textContent='Erro ao conectar: '+e.message;
+    console.error(e);
+  }
+})();
+</script>
+
+<!-- MODAL FIXA -->
+<div class="modal-overlay" id="modalFixa">
+  <div class="modal">
+    <div class="modal-title" id="fixaModalTitle">Nova Despesa Fixa</div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Descrição *</label><input type="text" id="fx_desc" placeholder="Ex: Netflix, Internet, Aluguel..."></div>
+      <div class="form-group"><label>Categoria *</label>
+        <select id="fx_cat">
+          <option value="fixo">Fixo</option>
+          <option value="variavel">Variável</option>
+          <option value="gustavo">Gustavo 👶</option>
+          <option value="lana">Lana 🐾</option>
+          <option value="assinatura">Assinatura</option>
+          <option value="saude">Saúde</option>
+          <option value="outros">Outros</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Quem paga *</label>
+        <select id="fx_resp">
+          <option value="A">Joel</option>
+          <option value="B">Andressa</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Valor padrão (R$) *</label>
+        <input type="number" id="fx_valor" min="0" step="0.01" placeholder="0,00" oninput="calcFixaDue()">
+      </div>
+      <div class="form-group"><label id="fx_due_label">Andressa deve (R$) *</label>
+        <input type="number" id="fx_due" min="0" step="0.01" placeholder="0,00">
+      </div>
+      <div class="form-group"><label>Dia de vencimento *</label>
+        <input type="number" id="fx_dia" min="1" max="31" placeholder="Ex: 10">
+      </div>
+      <div class="form-group full"><label>Observações</label>
+        <textarea id="fx_obs" placeholder="Detalhes adicionais..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalFixa')">Cancelar</button>
+      <button class="btn btn-primary" id="btnSalvarFixa" onclick="saveFixa()">Salvar</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
